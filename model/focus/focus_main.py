@@ -1,42 +1,137 @@
+import argparse
+
+import focus_model
 import torch
 import torch.nn as nn
-from torchvision import datasets, transforms
-from torch.utils.data import DataLoader
 import torch.optim as optim
-import focus_main
+from torch.optim.lr_scheduler import StepLR
+from torchvision import datasets, transforms
 
-image_size = 28
-patch_size = 28
+patch_size = 5
 k_points = 3
 
-epochs = 10
+def main():
+    # Training settings
+    parser = argparse.ArgumentParser(description="PyTorch Focus MNIST Example")
+    parser.add_argument(
+        "--batch-size",
+        type=int,
+        default=64,
+        metavar="N",
+        help="input batch size for training (default: 64)",
+    )
+    parser.add_argument(
+        "--test-batch-size",
+        type=int,
+        default=1000,
+        metavar="N",
+        help="input batch size for testing (default: 1000)",
+    )
+    parser.add_argument(
+        "--epochs",
+        type=int,
+        default=10,
+        metavar="N",
+        help="number of epochs to train (default: 10)",
+    )
+    parser.add_argument(
+        "--lr",
+        type=float,
+        default=1.0,
+        metavar="LR",
+        help="learning rate (default: 1.0)",
+    )
+    parser.add_argument(
+        "--gamma",
+        type=float,
+        default=0.7,
+        metavar="M",
+        help="Learning rate step gamma (default: 0.7)",
+    )
+    parser.add_argument(
+        "--no-cuda", action="store_true", default=False, help="disables CUDA training"
+    )
+    parser.add_argument(
+        "--no-mps",
+        action="store_true",
+        default=False,
+        help="disables macOS GPU training",
+    )
+    parser.add_argument(
+        "--dry-run",
+        action="store_true",
+        default=False,
+        help="quickly check a single pass",
+    )
+    parser.add_argument(
+        "--seed", type=int, default=1, metavar="S", help="random seed (default: 1)"
+    )
+    parser.add_argument(
+        "--log-interval",
+        type=int,
+        default=10,
+        metavar="N",
+        help="how many batches to wait before logging training status",
+    )
+    parser.add_argument(
+        "--save-model",
+        action="store_true",
+        default=False,
+        help="For Saving the current Model",
+    )
+    args = parser.parse_args()
+    use_cuda = not args.no_cuda and torch.cuda.is_available()
+    use_mps = not args.no_mps and torch.backends.mps.is_available()
 
-device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    torch.manual_seed(args.seed)
 
-# Load MNIST
-transform = transforms.Compose([
-    transforms.ToTensor(),
-    transforms.Normalize((0.1307,), (0.3081,))
-])
+    if use_cuda:
+        device = torch.device("cuda")
+    elif use_mps:
+        # device = torch.device("mps")
+        device = torch.device("cpu")
+    else:
+        device = torch.device("cpu")
 
-train_dataset = datasets.MNIST(root="./data", train=True, transform=transform, download=True)
-test_dataset = datasets.MNIST(root="./data", train=False, transform=transform, download=True)
+    train_kwargs = {"batch_size": args.batch_size}
+    test_kwargs = {"batch_size": args.test_batch_size}
+    if use_cuda:
+        cuda_kwargs = {"num_workers": 1, "pin_memory": True, "shuffle": True}
+        train_kwargs.update(cuda_kwargs)
+        test_kwargs.update(cuda_kwargs)
 
-# train_dataset = datasets.FashionMNIST(root="./data", train=True, transform=transform, download=True)
-# test_dataset = datasets.FashionMNIST(root="./data", train=False, transform=transform, download=True)
+    transform = transforms.Compose(
+        [transforms.ToTensor(), transforms.Normalize((0.1307,), (0.3081,))]
+    )
+    dataset1 = datasets.MNIST(
+        "./../data", train=True, download=True, transform=transform
+    )
+    dataset2 = datasets.MNIST("./../data", train=False, transform=transform)
+    train_loader = torch.utils.data.DataLoader(dataset1, **train_kwargs)
+    test_loader = torch.utils.data.DataLoader(dataset2, **test_kwargs)
 
-train_loader = DataLoader(train_dataset, batch_size=64, shuffle=True)
-test_loader = DataLoader(test_dataset, batch_size=1000)
+    image_size = dataset1[0][0].shape[1]
+    model = focus_model.KeypointPatchModel(k=k_points, patch_size=patch_size, image_size=image_size).to(device)
+    optimizer = optim.Adadelta(model.parameters(), lr=args.lr)
+    criterion = nn.CrossEntropyLoss()
 
-model = focus_main.KeypointPatchModel(k=k_points, patch_size=patch_size).to(device)
-optimizer = optim.Adam(model.parameters(), lr=1e-3)
-criterion = nn.CrossEntropyLoss()
+    scheduler = StepLR(optimizer, step_size=1, gamma=args.gamma)
+    for epoch in range(1, args.epochs + 1):
+        focus_model.train(args, model, device, train_loader, optimizer, criterion, epoch)
+        focus_model.test(model, device, test_loader, criterion)
+        scheduler.step()
+
+    if args.save_model:
+        torch.save(model.state_dict(), "mnist_cnn.pt")
+
+    user_input = input("Type exit to quit.")
+    while True:
+        if user_input.lower() == "exit":
+            break
+        focus_model.show_patches_and_keypoints(model, device, test_loader)
+        user_input = input("Type exit to quit: ")
 
 
-for epoch in range(epochs):
-    train_loss, train_acc = focus_main.train_epoch(model, train_loader, optimizer, criterion)
-    print(f"Epoch {epoch + 1}/{epochs}, Train Loss: {train_loss:.4f}, Train Accuracy: {train_acc:.2f}%")
 
-test_loss, test_acc = focus_main.evaluate(model, test_loader, criterion)
-print("\n")
-print(f"Test Loss: {test_loss:.4f}, Test Accuracy: {test_acc:.2f}%")
+if __name__ == "__main__":
+    main()
