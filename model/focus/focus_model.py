@@ -21,7 +21,7 @@ class KeypointDetector(nn.Module):
         super().__init__()
         self.k = k
         self.cnn = nn.Sequential(
-            nn.Conv2d(1, 16, 3, padding=1),
+            nn.Conv2d(3, 16, 3, padding=1),
             nn.ReLU(),
             nn.MaxPool2d(2),
             nn.Conv2d(16, 32, 3, padding=1),
@@ -42,10 +42,10 @@ class PatchClassifier(nn.Module):
         super().__init__()
         self.k = k
         self.cnn = nn.Sequential(
-            nn.Conv2d(1, 16, 3, padding=1),
+            nn.Conv2d(3, 8, 3, padding=1),
             nn.ReLU(),
             nn.Flatten(),
-            nn.Linear(16 * patch_size * patch_size, 64),
+            nn.Linear(8 * patch_size * patch_size, 64),
             nn.ReLU()
         )
         self.classifier = nn.Linear(64 * k, num_classes)
@@ -163,7 +163,7 @@ def show_patches_and_keypoints(model, device, loader):
 
     idx = random.randint(0, B - 1)
     fig, axes = plt.subplots(1, model.k + 1, figsize=(15, 5))
-    axes[0].imshow(images[idx].cpu().squeeze())
+    axes[0].imshow(images[idx].cpu().permute(1, 2, 0))
     axes[0].scatter(
         (vis_keypoints[idx, :, 0].cpu().numpy() + 1) * model.image_size / 2,
         (vis_keypoints[idx, :, 1].cpu().numpy() + 1) * model.image_size / 2,
@@ -174,7 +174,7 @@ def show_patches_and_keypoints(model, device, loader):
     axes[0].set_title("Original Image with Keypoints")
 
     for i in range(model.k):
-        axes[i + 1].imshow(patches[idx, i].cpu().squeeze())
+        axes[i + 1].imshow(patches[idx, i].cpu().permute(1, 2, 0))
         axes[i + 1].set_title(f"Patch {i + 1}")
 
     plt.tight_layout()

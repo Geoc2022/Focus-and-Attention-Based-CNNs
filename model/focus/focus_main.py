@@ -79,6 +79,12 @@ def main():
         default=False,
         help="For Saving the current Model",
     )
+    parser.add_argument(
+        "--show-patches",
+        type=bool,
+        default=True,
+        help="Show patches and keypoints",
+    )
     args = parser.parse_args()
     use_cuda = not args.no_cuda and torch.cuda.is_available()
     use_mps = not args.no_mps and torch.backends.mps.is_available()
@@ -101,12 +107,15 @@ def main():
         test_kwargs.update(cuda_kwargs)
 
     transform = transforms.Compose(
-        [transforms.ToTensor(), transforms.Normalize((0.1307,), (0.3081,))]
+        [transforms.ToTensor()]
     )
-    dataset1 = datasets.MNIST(
-        "./../data", train=True, download=True, transform=transform
-    )
-    dataset2 = datasets.MNIST("./../data", train=False, transform=transform)
+    # dataset1 = datasets.MNIST("./../data", train=True, download=True, transform=transform)
+    # dataset2 = datasets.MNIST("./../data", train=False, transform=transform)
+    # dataset1 = datasets.FashionMNIST("./../data", train=True, download=True, transform=transform)
+    # dataset2 = datasets.FashionMNIST("./../data", train=False, transform=transform)
+    dataset1 = datasets.CIFAR10(root="./data", train=True, download=True, transform=transform)
+    dataset2 = datasets.CIFAR10(root="./data", train=False, download=True, transform=transform)
+
     train_loader = torch.utils.data.DataLoader(dataset1, **train_kwargs)
     test_loader = torch.utils.data.DataLoader(dataset2, **test_kwargs)
 
@@ -124,12 +133,9 @@ def main():
     if args.save_model:
         torch.save(model.state_dict(), "mnist_cnn.pt")
 
-    user_input = input("Type exit to quit.")
-    while True:
-        if user_input.lower() == "exit":
-            break
-        focus_model.show_patches_and_keypoints(model, device, test_loader)
-        user_input = input("Type exit to quit: ")
+    if args.show_patches:
+        while input("Show patches and keypoints? (y/n): ").lower() != "n":
+            focus_model.show_patches_and_keypoints(model, device, test_loader)
 
 
 
