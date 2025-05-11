@@ -107,7 +107,7 @@ def main():
         test_kwargs.update(cuda_kwargs)
 
     transform = transforms.Compose(
-        [transforms.ToTensor()]
+        [transforms.ToTensor(), transforms.Normalize((0.1307,), (0.3081,))]
     )
     # dataset1 = datasets.MNIST("./../data", train=True, download=True, transform=transform)
     # dataset2 = datasets.MNIST("./../data", train=False, transform=transform)
@@ -119,8 +119,8 @@ def main():
     train_loader = torch.utils.data.DataLoader(dataset1, **train_kwargs)
     test_loader = torch.utils.data.DataLoader(dataset2, **test_kwargs)
 
-    image_size = dataset1[0][0].shape[1]
-    model = focus_model.KeypointPatchModel(k=k_points, patch_size=patch_size, image_size=image_size).to(device)
+    image_shape = dataset1[0][0].shape
+    model = focus_model.KeypointPatchModel(k=k_points, patch_size=patch_size, image_shape=image_shape).to(device)
     optimizer = optim.Adadelta(model.parameters(), lr=args.lr)
     criterion = nn.CrossEntropyLoss()
 

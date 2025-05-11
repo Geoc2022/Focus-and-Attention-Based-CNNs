@@ -1,41 +1,27 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+# from torchvision import datasets, transforms
+# from torch.utils.data import DataLoader
+# import torch.optim as optim
 
 import matplotlib.pyplot as plt
 import random
 
 
-def extract_patches(images, keypoints, patch_size, device):
-    B, C, H, W = images.shape
-    k = keypoints.shape[1]
-
-    coords_normalized = (keypoints + 1) / 2
-
-    patch_radius = patch_size / H
-    patch_grid = torch.linspace(-patch_radius, patch_radius, patch_size, device=device)
-    yy, xx = torch.meshgrid(patch_grid, patch_grid, indexing='ij')
-    grid = torch.stack([xx, yy], dim=-1).unsqueeze(0).unsqueeze(0)
-
-    coords_expanded = coords_normalized.unsqueeze(2).unsqueeze(3)
-    grid = grid + coords_expanded
-
-    grid = grid * 2 - 1
-    grid = grid.view(B * k, patch_size, patch_size, 2)
-
-    x_expanded = images.repeat_interleave(k, dim=0)
-    patches = F.grid_sample(x_expanded, grid, align_corners=True, mode='bilinear', padding_mode='zeros')
-
-    patches = patches.view(B, k, C, patch_size, patch_size)
-    return patches
-
+def create_patch_grid(k, patch_size):
+    lin_coords = torch.linspace(-1, 1, steps=patch_size)
+    x_grid, y_grid = torch.meshgrid(lin_coords, lin_coords, indexing="xy")
+    grid = torch.stack([x_grid, y_grid], dim=-1)
+    grid = grid.unsqueeze(0).repeat(k, 1, 1, 1)
+    return grid
 
 class KeypointDetector(nn.Module):
-    def __init__(self, k, channel_size):
+    def __init__(self, k):
         super().__init__()
         self.k = k
         self.cnn = nn.Sequential(
-            nn.Conv2d(channel_size, 16, 3, padding=1),
+            nn.Conv2d(1, 16, 3, padding=1),
             nn.ReLU(),
             nn.MaxPool2d(2),
             nn.Conv2d(16, 32, 3, padding=1),
@@ -52,11 +38,11 @@ class KeypointDetector(nn.Module):
         return coords
 
 class PatchClassifier(nn.Module):
-    def __init__(self, k, patch_size, channel_size, num_classes):
+    def __init__(self, k, patch_size, num_classes=10):
         super().__init__()
         self.k = k
         self.cnn = nn.Sequential(
-            nn.Conv2d(channel_size, 8, 3, padding=1),
+            nn.Conv2d(1, 8, 3, padding=1),
             nn.ReLU(),
             nn.Flatten(),
             nn.Linear(8 * patch_size * patch_size, 64),
@@ -73,27 +59,25 @@ class PatchClassifier(nn.Module):
         return out
 
 class KeypointPatchModel(nn.Module):
-    def __init__(self, k=3, patch_size=5, image_shape=(28, 28, 1), num_classes=10):
+    def __init__(self, k=3, patch_size=5, image_size=28):
         super().__init__()
         self.k = k
         self.patch_size = patch_size
-        self.image_shape = image_shape
-        self.detector = KeypointDetector(
-            k=k, 
-            channel_size=image_shape[0]
-        )
-        self.classifier = PatchClassifier(
-            k=k, 
-            patch_size=patch_size, 
-            channel_size=image_shape[0], 
-            num_classes=num_classes
-        )
+        self.image_size = image_size
+        self.detector = KeypointDetector(k)
+        self.classifier = PatchClassifier(k, patch_size)
 
     def forward(self, x):
+        B, C, H, W = x.shape
         coords = self.detector(x)
-
-        patches = extract_patches(x, coords, self.patch_size, x.device)
-                
+        grid = create_patch_grid(self.k, self.patch_size).to(x.device)
+        coords = coords.unsqueeze(2).unsqueeze(2)
+        patch_grid = grid.unsqueeze(0) + coords
+        patch_grid = patch_grid.view(B * self.k, self.patch_size, self.patch_size, 2)
+        x_rep = x.unsqueeze(1).repeat(1, self.k, 1, 1, 1)
+        x_rep = x_rep.view(B * self.k, C, H, W)
+        patches = F.grid_sample(x_rep, patch_grid, align_corners=True)
+        patches = patches.view(B, self.k, C, self.patch_size, self.patch_size)
         return self.classifier(patches)
     
 def train_epoch(model, device, loader, optimizer, criterion):
@@ -166,16 +150,23 @@ def show_patches_and_keypoints(model, device, loader):
     with torch.no_grad():
         keypoints = model.detector(images)  
         vis_keypoints = keypoints.clone()   
-        B, C, H, W = images.shape
 
-        patches = extract_patches(images, keypoints, model.patch_size, device)
+        B, C, H, W = images.shape
+        grid = create_patch_grid(model.k, model.patch_size).to(device)
+        keypoints = keypoints.unsqueeze(2).unsqueeze(2)  
+        patch_grid = grid.unsqueeze(0) + keypoints
+        patch_grid = patch_grid.view(B * model.k, model.patch_size, model.patch_size, 2)
+        images_rep = images.unsqueeze(1).repeat(1, model.k, 1, 1, 1)
+        images_rep = images_rep.view(B * model.k, C, H, W)
+        patches = F.grid_sample(images_rep, patch_grid, align_corners=True)
+        patches = patches.view(B, model.k, C, model.patch_size, model.patch_size)
 
     idx = random.randint(0, B - 1)
     fig, axes = plt.subplots(1, model.k + 1, figsize=(15, 5))
     axes[0].imshow(images[idx].cpu().permute(1, 2, 0))
     axes[0].scatter(
-        (vis_keypoints[idx, :, 0].cpu().numpy() + 1) * model.image_shape[1] / 2,
-        (vis_keypoints[idx, :, 1].cpu().numpy() + 1) * model.image_shape[1] / 2,
+        (vis_keypoints[idx, :, 0].cpu().numpy() + 1) * model.image_size / 2,
+        (vis_keypoints[idx, :, 1].cpu().numpy() + 1) * model.image_size / 2,
         c="red",
         s=50,
         marker="x"
