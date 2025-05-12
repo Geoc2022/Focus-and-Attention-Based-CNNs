@@ -1,6 +1,6 @@
 import argparse
 
-import test_model
+import attention_model
 import torch
 import torch.optim as optim
 from torch.optim.lr_scheduler import StepLR
@@ -158,15 +158,15 @@ def main():
     train_loader = torch.utils.data.DataLoader(train_dataset, **train_kwargs)
     test_loader = torch.utils.data.DataLoader(val_dataset, **test_kwargs)
 
-    model = test_model.Net().to(device)
+    model = attention_model.Net().to(device)
     # optimizer = optim.Adadelta(model.parameters(), lr=args.lr)
-    criterion = test_model.FocalLoss(alpha=0.25, gamma=2.0)
+    criterion = attention_model.FocalLoss(alpha=0.25, gamma=2.0)
     optimizer = optim.Adam(model.parameters(), lr=3e-4, weight_decay=1e-4)
 
     scheduler = StepLR(optimizer, step_size=1, gamma=args.gamma)
     for epoch in range(1, args.epochs + 1):
-        test_model.train(args, model, device, train_loader, optimizer, epoch, criterion)
-        test_model.test(model, device, test_loader, criterion)
+        attention_model.train(args, model, device, train_loader, optimizer, epoch, criterion)
+        attention_model.test(model, device, test_loader, criterion)
         scheduler.step()
 
     if args.save_model:
