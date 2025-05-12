@@ -142,20 +142,15 @@ def main():
     transform = transforms.Compose(
         [transforms.ToTensor(), transforms.Normalize((0.1307,), (0.3081,))]
     )
-    # dataset1 = datasets.MNIST(
-    #     "./../data", train=True, download=True, transform=transform
-    # )
-    # dataset2 = datasets.MNIST("./../data", train=False, transform=transform)
-    # dataset1 = datasets.FashionMNIST(
-    #     "./../data", train=True, download=True, transform=transform
-    # )
+    dataset1 = datasets.MNIST("./../data", train=True, download=True, transform=transform)
+    dataset2 = datasets.MNIST("./../data", train=False, transform=transform)
+    
+    # dataset1 = datasets.FashionMNIST("./../data", train=True, download=True, transform=transform)
     # dataset2 = datasets.FashionMNIST("./../data", train=False, transform=transform)
 
     #CIFAR10
-    dataset1 = datasets.CIFAR10(root="./data", train=True, download=True, transform=transform)
-    dataset2 = datasets.CIFAR10(root="./data", train=False, download=True, transform=transform)
-    # train_loader = torch.utils.data.DataLoader(dataset1, **train_kwargs)
-    # test_loader = torch.utils.data.DataLoader(dataset2, **test_kwargs)
+    # dataset1 = datasets.CIFAR10(root="./data", train=True, download=True, transform=transform)
+    # dataset2 = datasets.CIFAR10(root="./data", train=False, download=True, transform=transform)
 
     #ImageNET
     # train_dir = "./data/Imagenet32_train_npz"
@@ -173,7 +168,12 @@ def main():
     train_loader = torch.utils.data.DataLoader(train_dataset, **train_kwargs)
     test_loader = torch.utils.data.DataLoader(val_dataset, **test_kwargs)
 
-    model = attention_model.Net().to(device)
+    print(train_dataset.data[0].shape)
+    if len(train_dataset.data[0].shape) == 3:
+        channel = train_dataset.data[0].shape[2]
+    else:
+        channel = 1
+    model = attention_model.Net(channel).to(device)
     # optimizer = optim.Adadelta(model.parameters(), lr=args.lr)
     criterion = attention_model.FocalLoss(alpha=0.25, gamma=2.0)
     optimizer = optim.Adam(model.parameters(), lr=3e-4, weight_decay=1e-4)

@@ -105,9 +105,10 @@ class AttentionBlock(nn.Module):
 
 
 class Net(nn.Module):
-    def __init__(self):
+    def __init__(self, channels=3):
         super(Net, self).__init__()
-        self.conv1 = nn.Conv2d(3, 64, 3, padding=1)
+        self.channels = channels
+        self.conv1 = nn.Conv2d(self.channels, 64, 3, padding=1)
         self.bn1 = nn.BatchNorm2d(64)
         self.conv2 = nn.Conv2d(64, 128, 3, padding=1)
         self.bn2 = nn.BatchNorm2d(128)
