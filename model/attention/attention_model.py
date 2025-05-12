@@ -222,3 +222,4 @@ def test(model, device, test_loader, criterion):
             100.0 * correct / len(test_loader.dataset),
         )
     )
+    return test_loss, correct / len(test_loader.dataset)

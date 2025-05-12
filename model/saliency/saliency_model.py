@@ -187,6 +187,7 @@ def test(model, device, test_loader, criterion):
             100.0 * correct / len(test_loader.dataset),
         )
     )
+    return correct / len(test_loader.dataset), test_loss
 
 
 def show_patches_and_keypoints(model, device, loader):

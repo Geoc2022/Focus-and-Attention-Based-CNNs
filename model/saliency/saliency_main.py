@@ -7,6 +7,8 @@ import torch.optim as optim
 from torch.optim.lr_scheduler import StepLR
 from torchvision import datasets, transforms
 
+import matplotlib.pyplot as plt
+
 patch_size = 5
 k_points = 3
 
@@ -125,10 +127,24 @@ def main():
     criterion = nn.CrossEntropyLoss()
 
     scheduler = StepLR(optimizer, step_size=1, gamma=args.gamma)
+    test_acc = []
     for epoch in range(1, args.epochs + 1):
         saliency_model.train(args, model, device, train_loader, optimizer, criterion, epoch)
-        saliency_model.test(model, device, test_loader, criterion)
+        acc, _ = saliency_model.test(model, device, test_loader, criterion)
+        test_acc.append(acc)
         scheduler.step()
+
+    print("Test Accuracy: ", test_acc)
+
+    plt.figure(figsize=(10, 6))
+    plt.plot(range(1, args.epochs + 1), test_acc, marker='o', label='Test Accuracy')
+    plt.xlabel('Epochs')
+    plt.ylabel('Accuracy')
+    plt.title('Accuracy Over Epochs')
+    plt.grid(True)
+    plt.legend()
+    plt.savefig('saliency_accuracy_plot.png')
+    plt.show()
 
     if args.save_model:
         torch.save(model.state_dict(), "mnist_cnn.pt")

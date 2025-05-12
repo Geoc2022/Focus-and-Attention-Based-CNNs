@@ -5,6 +5,7 @@ import torch
 import torch.optim as optim
 from torch.optim.lr_scheduler import StepLR
 from torchvision import datasets, transforms
+import matplotlib.pyplot as plt
 import os
 import numpy as np
 
@@ -69,7 +70,7 @@ def main():
     parser.add_argument(
         "--epochs",
         type=int,
-        default=50,
+        default=20,
         metavar="N",
         help="number of epochs to train (default: 14)",
     )
@@ -151,17 +152,20 @@ def main():
     # dataset2 = datasets.FashionMNIST("./../data", train=False, transform=transform)
 
     #CIFAR10
-    # dataset1 = datasets.ImageNet(root="./../data", train=True, download=True, transform=transform)
-    # dataset2 = datasets.ImageNet(root="./../data", train=False, download=True, transform=transform)
+    dataset1 = datasets.CIFAR10(root="./data", train=True, download=True, transform=transform)
+    dataset2 = datasets.CIFAR10(root="./data", train=False, download=True, transform=transform)
     # train_loader = torch.utils.data.DataLoader(dataset1, **train_kwargs)
     # test_loader = torch.utils.data.DataLoader(dataset2, **test_kwargs)
 
     #ImageNET
-    train_dir = "./data/Imagenet32_train_npz"
-    val_dir = "./data/Imagenet32_val_npz"
+    # train_dir = "./data/Imagenet32_train_npz"
+    # val_dir = "./data/Imagenet32_val_npz"
 
-    train_dataset = ImageNet32Dataset(train_dir, train=True)
-    val_dataset = ImageNet32Dataset(val_dir, train=False)
+    # train_dataset = ImageNet32Dataset(train_dir, train=True)
+    # val_dataset = ImageNet32Dataset(val_dir, train=False)
+    
+    train_dataset = dataset1
+    val_dataset = dataset2
 
     # train_dataset = datasets.ImageNet(root=train_dir)
     # val_dataset = datasets.ImageNet(root=val_dir)
@@ -175,10 +179,25 @@ def main():
     optimizer = optim.Adam(model.parameters(), lr=3e-4, weight_decay=1e-4)
 
     scheduler = StepLR(optimizer, step_size=1, gamma=args.gamma)
+    test_acc = []
     for epoch in range(1, args.epochs + 1):
         attention_model.train(args, model, device, train_loader, optimizer, epoch, criterion)
-        attention_model.test(model, device, test_loader, criterion)
+        _, acc = attention_model.test(model, device, test_loader, criterion)
+        test_acc.append(acc)
         scheduler.step()
+
+    # Plot the test accuracy over epochs
+    plt.figure(figsize=(10, 6))
+    plt.plot(range(1, args.epochs + 1), test_acc, marker='o', label='Test Accuracy')
+    plt.xlabel('Epochs')
+    plt.ylabel('Accuracy')
+    plt.title('Accuracy Over Epochs')
+    plt.grid(True)
+    plt.legend()
+    plt.savefig('attention_accuracy_plot.png')
+    plt.show()
+    
+    print("Test Accuracy: ", test_acc)
 
     if args.save_model:
         torch.save(model.state_dict(), "mnist_cnn.pt")

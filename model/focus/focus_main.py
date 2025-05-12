@@ -7,6 +7,8 @@ import torch.optim as optim
 from torch.optim.lr_scheduler import StepLR
 from torchvision import datasets, transforms
 
+import matplotlib.pyplot as plt
+
 patch_size = 5
 k_points = 3
 
@@ -109,12 +111,12 @@ def main():
     transform = transforms.Compose(
         [transforms.ToTensor(), transforms.Normalize((0.1307,), (0.3081,))]
     )
-    # dataset1 = datasets.MNIST("./../data", train=True, download=True, transform=transform)
-    # dataset2 = datasets.MNIST("./../data", train=False, transform=transform)
+    dataset1 = datasets.MNIST("./../data", train=True, download=True, transform=transform)
+    dataset2 = datasets.MNIST("./../data", train=False, transform=transform)
     # dataset1 = datasets.FashionMNIST("./../data", train=True, download=True, transform=transform)
     # dataset2 = datasets.FashionMNIST("./../data", train=False, transform=transform)
-    dataset1 = datasets.CIFAR10(root="./data", train=True, download=True, transform=transform)
-    dataset2 = datasets.CIFAR10(root="./data", train=False, download=True, transform=transform)
+    # dataset1 = datasets.CIFAR10(root="./data", train=True, download=True, transform=transform)
+    # dataset2 = datasets.CIFAR10(root="./data", train=False, download=True, transform=transform)
 
     train_loader = torch.utils.data.DataLoader(dataset1, **train_kwargs)
     test_loader = torch.utils.data.DataLoader(dataset2, **test_kwargs)
@@ -123,12 +125,26 @@ def main():
     model = focus_model.KeypointPatchModel(k=k_points, patch_size=patch_size, image_shape=image_shape).to(device)
     optimizer = optim.Adadelta(model.parameters(), lr=args.lr)
     criterion = nn.CrossEntropyLoss()
-
+    
     scheduler = StepLR(optimizer, step_size=1, gamma=args.gamma)
+    test_acc = []
     for epoch in range(1, args.epochs + 1):
         focus_model.train(args, model, device, train_loader, optimizer, criterion, epoch)
-        focus_model.test(model, device, test_loader, criterion)
+        acc, _ = focus_model.test(model, device, test_loader, criterion)
+        test_acc.append(acc)
         scheduler.step()
+
+    print("Test Accuracy: ", test_acc)
+    
+    plt.figure(figsize=(10, 6))
+    plt.plot(range(1, args.epochs + 1), test_acc, marker='o', label='Test Accuracy')
+    plt.xlabel('Epochs')
+    plt.ylabel('Accuracy')
+    plt.title('Accuracy Over Epochs')
+    plt.grid(True)
+    plt.legend()
+    plt.savefig('focus_accuracy_plot.png')
+    plt.show()
 
     if args.save_model:
         torch.save(model.state_dict(), "mnist_cnn.pt")
