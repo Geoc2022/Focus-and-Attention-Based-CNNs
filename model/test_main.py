@@ -5,10 +5,44 @@ import torch
 import torch.optim as optim
 from torch.optim.lr_scheduler import StepLR
 from torchvision import datasets, transforms
+import os
+import numpy as np
+from pathlib import Path
+
+class ImageNet32Dataset(torch.utils.data.Dataset):
+    def __init__(self, data_dir, train=True):
+        self.data = []
+        self.labels = []
+        
+        if train:
+            for i in range(1, 11):
+                file_path = os.path.join(data_dir, f'train_data_batch_{i}.npz')
+                data_dict = np.load(file_path)
+                images = data_dict['data'].reshape(-1, 3, 32, 32).astype(np.float32) / 255.0
+                labels = data_dict['labels'] - 1
+                self.data.append(images)
+                self.labels.append(labels)
+        else:
+            file_path = os.path.join(data_dir, 'val_data.npz')
+            data_dict = np.load(file_path)
+            images = data_dict['data'].reshape(-1, 3, 32, 32).astype(np.float32) / 255.0
+            labels = data_dict['labels'] - 1
+            self.data.append(images)
+            self.labels.append(labels)
+            
+        self.data = np.concatenate(self.data)
+        self.labels = np.concatenate(self.labels)
+        
+    def __len__(self):
+        return len(self.data)
+    
+    def __getitem__(self, idx):
+        image = torch.from_numpy(self.data[idx])
+        label = torch.tensor(self.labels[idx], dtype=torch.long)
+        return image, label
 
 
 def main():
-    # Training settings
     parser = argparse.ArgumentParser(description="PyTorch MNIST Example")
     parser.add_argument(
         "--batch-size",
@@ -99,20 +133,40 @@ def main():
     transform = transforms.Compose(
         [transforms.ToTensor(), transforms.Normalize((0.1307,), (0.3081,))]
     )
-    dataset1 = datasets.MNIST(
-        "./../data", train=True, download=True, transform=transform
-    )
-    dataset2 = datasets.MNIST("./../data", train=False, transform=transform)
-    train_loader = torch.utils.data.DataLoader(dataset1, **train_kwargs)
-    test_loader = torch.utils.data.DataLoader(dataset2, **test_kwargs)
+    # dataset1 = datasets.MNIST(
+    #     "./../data", train=True, download=True, transform=transform
+    # )
+    # dataset2 = datasets.MNIST("./../data", train=False, transform=transform)
+    # dataset1 = datasets.FashionMNIST(
+    #     "./../data", train=True, download=True, transform=transform
+    # )
+    # dataset2 = datasets.FashionMNIST("./../data", train=False, transform=transform)
+
+    #CIFAR10
+    # dataset1 = datasets.ImageNet(root="./../data", train=True, download=True, transform=transform)
+    # dataset2 = datasets.ImageNet(root="./../data", train=False, download=True, transform=transform)
+    # train_loader = torch.utils.data.DataLoader(dataset1, **train_kwargs)
+    # test_loader = torch.utils.data.DataLoader(dataset2, **test_kwargs)
+
+    #ImageNET
+    train_dir = "./../data/Imagenet32_train_npz"
+    val_dir = "./../data/Imagenet32_val_npz"
+
+    train_dataset = ImageNet32Dataset(train_dir, train=True)
+    val_dataset = ImageNet32Dataset(val_dir, train=False)
+
+    train_loader = torch.utils.data.DataLoader(train_dataset, **train_kwargs)
+    test_loader = torch.utils.data.DataLoader(val_dataset, **test_kwargs)
 
     model = test_model.Net().to(device)
-    optimizer = optim.Adadelta(model.parameters(), lr=args.lr)
+    # optimizer = optim.Adadelta(model.parameters(), lr=args.lr)
+    criterion = test_model.FocalLoss(alpha=0.25, gamma=2.0)
+    optimizer = optim.Adam(model.parameters(), lr=3e-4, weight_decay=1e-4)
 
     scheduler = StepLR(optimizer, step_size=1, gamma=args.gamma)
     for epoch in range(1, args.epochs + 1):
-        test_model.train(args, model, device, train_loader, optimizer, epoch)
-        test_model.test(model, device, test_loader)
+        test_model.train(args, model, device, train_loader, optimizer, epoch, criterion)
+        test_model.test(model, device, test_loader, criterion)
         scheduler.step()
 
     if args.save_model:

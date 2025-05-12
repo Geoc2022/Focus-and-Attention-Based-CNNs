@@ -175,3 +175,5 @@ cython_debug/
 
 # Mac File System
 .DS_Store
+
+/data/
