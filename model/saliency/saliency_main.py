@@ -109,8 +109,8 @@ def main():
     transform = transforms.Compose(
         [transforms.ToTensor(), transforms.Normalize((0.1307,), (0.3081,))]
     )
-    dataset1 = datasets.MNIST("./../data", train=True, download=True, transform=transform)
-    dataset2 = datasets.MNIST("./../data", train=False, transform=transform)
+    dataset1 = datasets.MNIST("./data", train=True, download=True, transform=transform)
+    dataset2 = datasets.MNIST("./data", train=False, transform=transform)
     # dataset1 = datasets.FashionMNIST("./../data", train=True, download=True, transform=transform)
     # dataset2 = datasets.FashionMNIST("./../data", train=False, transform=transform)
     # dataset1 = datasets.CIFAR10(root="./data", train=True, download=True, transform=transform)

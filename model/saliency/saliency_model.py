@@ -2,8 +2,6 @@ import time
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-import cv2
-import numpy as np
 
 import matplotlib.pyplot as plt
 import random
@@ -11,37 +9,6 @@ import random
 def harris_corner_detection_coords(images, k, patch_size=5):
     # given images are in the shape of (B, C, H, W) find the keypoints using Harris corner detection
     
-    # # Method1
-    # B, C, H, W = images.shape
-    # images_np = images.cpu().numpy().transpose(0, 2, 3, 1)  # Convert to (B, H, W, C)
-    # if C != 1:
-    #     images_np = np.stack([cv2.cvtColor(img, cv2.COLOR_GRAY2BGR) for img in images_np], axis=0)
-
-    # gray_images = np.float32(images_np)
-    # margin = 5  # should change to the patch size
-    # mask = np.zeros((H, W), dtype=np.uint8)
-    # mask[margin:H-margin, margin:W-margin] = 1
-
-    # dst = np.array([cv2.cornerHarris(img, 2, 7, 0.04) for img in gray_images])
-    # dst = np.array([cv2.dilate(d, None) for d in dst])
-    # dst = dst * mask[None, :, :]
-
-    # coords = []
-    # for i in range(B):
-    #     coords_i = np.argwhere(dst[i] > 0.01 * dst[i].max())
-    #     coords_i = coords_i[:k]
-    #     coords_i = (coords_i / np.array([H, W]) - 0.5) * 2
-    #     coords.append(coords_i)
-
-    # coords = np.stack(coords)
-    # coords = torch.tensor(coords, dtype=torch.float32, device=images.device)
-    # coords = coords.view(B, k, 2)
-    # coords = coords.permute(0, 2, 1)
-    # coords = coords.clamp(-1, 1)
-    
-    # return coords
-
-    # Method2
     B, C, H, W = images.shape
     margin = patch_size
     mask = torch.zeros((H, W), device=images.device, dtype=torch.float32)

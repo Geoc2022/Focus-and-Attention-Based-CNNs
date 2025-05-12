@@ -62,7 +62,13 @@ class PatchClassifier(nn.Module):
             nn.Linear(8 * patch_size * patch_size, 64),
             nn.ReLU()
         )
-        self.classifier = nn.Linear(64 * k, num_classes)
+        # self.classifier = nn.Linear(64 * k, num_classes)
+        self.classifier = nn.Sequential(
+            nn.Dropout(.25),
+            nn.Linear(64 * k, 64 * k),
+            nn.Dropout(.5),
+            nn.Linear(64 * k, num_classes)
+        )
 
     def forward(self, patches):
         B, k, C, H, W = patches.shape
