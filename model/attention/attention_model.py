@@ -5,7 +5,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from torchvision import utils
 
-def visualize_attention(I_train, a, up_factor, no_attention=False):
+def plot_attention(I_train, a, up_factor, no_attention=False):
     img = I_train.permute((1, 2, 0)).cpu().numpy()    
     if img.shape[2] == 1:
         img = np.repeat(img, 3, axis=2) 
@@ -55,76 +55,34 @@ class FocalLoss(nn.Module):
             return focal_loss
 
 class AttentionBlock(nn.Module):
-    def __init__(
-        self,
-        in_features_l,
-        in_features_g,
-        attn_features,
-        up_factor,
-        normalize_attn=True,
-    ):
+    def __init__(self, in_features_l, in_features_g, attn_features, up_factor):
         super(AttentionBlock, self).__init__()
         self.up_factor = up_factor
-        self.normalize_attn = normalize_attn
-
-        self.W_l = nn.Conv2d(
-            in_channels=in_features_l,
-            out_channels=attn_features,
-            kernel_size=1,
-            padding=0,
-            bias=False,
-        )
-        self.W_g = nn.Conv2d(
-            in_channels=in_features_g,
-            out_channels=attn_features,
-            kernel_size=1,
-            padding=0,
-            bias=False,
-        )
-        self.phi = nn.Conv2d(
-            in_channels=attn_features,
-            out_channels=1,
-            kernel_size=1,
-            padding=0,
-            bias=True,
-        )
-        self.channel_attention = nn.Sequential(
-            nn.AdaptiveAvgPool2d(1),
-            nn.Conv2d(in_features_l, attn_features//8, 1),
-            nn.ReLU(),
-            nn.Conv2d(attn_features//8, in_features_l, 1),
-            nn.Sigmoid()
-        )
-
+        
+        self.W_l = nn.Conv2d(in_features_l, attn_features, 1, bias=False)
+        self.W_g = nn.Conv2d(in_features_g, attn_features, 1, bias=False)
+        self.phi = nn.Conv2d(attn_features, 1, 1, bias=True)
+        
     def forward(self, l, g):
-        N, C, W, H = l.size()
         l_ = self.W_l(l)
         g_ = self.W_g(g)
         
         if self.up_factor > 1:
-            g_ = F.interpolate(
-                g_, scale_factor=self.up_factor, mode="bilinear", align_corners=False
-            )
+            g_ = F.interpolate(g_, scale_factor=self.up_factor, mode='bilinear', align_corners=False)
         
-        c = self.phi(F.relu(l_ + g_))
+        c = self.phi(F.relu(l_ + g_)) 
+        a = torch.sigmoid(c)           
         
-        if self.normalize_attn:
-            a = F.softmax(c.view(N, 1, -1), dim=2).view(N, 1, W, H)
-        else:
-            a = torch.sigmoid(c)
-            
-        f = torch.mul(a.expand_as(l), l)
-        if self.normalize_attn:
-            output = f.view(N, C, -1).sum(dim=2)
-        else:
-            output = F.adaptive_avg_pool2d(f, (1, 1)).view(N, C)
-        return a, output
+        attended_features = a * l
+        
+        return a, attended_features
 
 
 class Net(nn.Module):
     def __init__(self, in_channels=3):
         super(Net, self).__init__()
-        self.conv1 = nn.Conv2d(in_channels, 64, 3, padding=1)
+        self.in_channels = in_channels
+        self.conv1 = nn.Conv2d(3, 64, 3, padding=1)
         self.bn1 = nn.BatchNorm2d(64)
         self.conv2 = nn.Conv2d(64, 128, 3, padding=1)
         self.bn2 = nn.BatchNorm2d(128)
@@ -136,33 +94,36 @@ class Net(nn.Module):
             in_features_g=256,
             attn_features=128,
             up_factor=2,
-            normalize_attn=True,
         )
         
         self.pool = nn.MaxPool2d(2, 2)
         self.dropout1 = nn.Dropout(0.3)
         self.dropout2 = nn.Dropout(0.5)
         
-        self.fc1 = nn.Linear(256*4*4 + 128, 512)
+        self.fc1 = nn.Linear(27392 if in_channels == 1 else 36864, 512)
         self.fc2 = nn.Linear(512, 256)
         self.fc3 = nn.Linear(256, 1000) 
 
     def forward(self, x):
+        if x.size(1) == 1 and self.in_channels == 3:
+            x = x.repeat(1, 3, 1, 1)  # Repeat grayscale channel 3 times
         x = F.relu(self.bn1(self.conv1(x)))
         x = self.pool(x)
         
         x = F.relu(self.bn2(self.conv2(x)))
-        s1 = x  #save for attention
+        s1 = x
         x = self.pool(x)
         
         x = F.relu(self.bn3(self.conv3(x)))
-        s2 = x  #save for attention
-        x = self.pool(x)  
+        s2 = x 
+        x = self.pool(x)
         
         a, g = self.attn(s1, s2)
+
+        x_flat = torch.flatten(x, 1)
+        g_flat = torch.flatten(g, 1)
         
-        x = torch.flatten(x, 1) 
-        x = torch.cat((x, g), dim=1)
+        x = torch.cat((x_flat, g_flat), dim=1) 
         
         x = self.dropout1(x)
         x = F.relu(self.fc1(x))
@@ -176,6 +137,8 @@ def train(args, model, device, train_loader, optimizer, epoch, criterion):
     model.train()
     print(enumerate(train_loader))
     for batch_idx, (data, target) in enumerate(train_loader):
+        if data.size(1) == 1:
+            data = data.repeat(1, 3, 1, 1)
         data, target = data.to(device), target.to(device)
         optimizer.zero_grad()
         output, _ = model(data)
@@ -208,6 +171,8 @@ def test(model, device, test_loader, criterion):
 
     with torch.no_grad():
         for data, target in test_loader:
+            if data.size(1) == 1:
+                data = data.repeat(1, 3, 1, 1)
             data, target = data.to(device), target.to(device)
             output, _ = model(data)
             test_loss += criterion(output, target).item() * data.size(0)
@@ -221,8 +186,8 @@ def test(model, device, test_loader, criterion):
             single_attn = attn_maps[i].unsqueeze(0)
             single_img = out_ims[i].unsqueeze(0)
             single_grid = utils.make_grid(single_img.cpu(), nrow=1, normalize=True)
-            orig.append(visualize_attention(single_grid, single_attn, up_factor=2, no_attention=True))
-            heatmaps.append(visualize_attention(single_grid, single_attn, up_factor=2, no_attention=False))
+            orig.append(plot_attention(single_grid, single_attn, up_factor=2, no_attention=True))
+            heatmaps.append(plot_attention(single_grid, single_attn, up_factor=2, no_attention=False))
         orig = torch.cat(orig, dim=1)
         heatmaps = torch.cat(heatmaps, dim=1)
         _, (ax1, ax2) = plt.subplots(2, 1, figsize=(8, 8))

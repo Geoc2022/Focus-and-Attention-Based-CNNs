@@ -149,16 +149,16 @@ def main():
     # test_loader = torch.utils.data.DataLoader(dataset2, **test_kwargs)
 
     #ImageNET
-    train_dir = "./../data/Imagenet32_train_npz"
-    val_dir = "./../data/Imagenet32_val_npz"
+    # train_dir = "./../data/Imagenet32_train_npz"
+    # val_dir = "./../data/Imagenet32_val_npz"
 
-    train_dataset = ImageNet32Dataset(train_dir, train=True)
-    val_dataset = ImageNet32Dataset(val_dir, train=False)
+    # train_dataset = ImageNet32Dataset(train_dir, train=True)
+    # val_dataset = ImageNet32Dataset(val_dir, train=False)
 
-    train_loader = torch.utils.data.DataLoader(train_dataset, **train_kwargs)
-    test_loader = torch.utils.data.DataLoader(val_dataset, **test_kwargs)
+    # train_loader = torch.utils.data.DataLoader(train_dataset, **train_kwargs)
+    # test_loader = torch.utils.data.DataLoader(val_dataset, **test_kwargs)
 
-    model = attention_model.Net().to(device)
+    model = attention_model.Net(in_channels=3).to(device)
     # optimizer = optim.Adadelta(model.parameters(), lr=args.lr)
     criterion = attention_model.FocalLoss(alpha=0.25, gamma=2.0)
     optimizer = optim.Adam(model.parameters(), lr=3e-4, weight_decay=1e-4)
