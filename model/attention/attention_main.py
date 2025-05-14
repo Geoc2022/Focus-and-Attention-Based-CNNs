@@ -143,8 +143,8 @@ def main():
     # dataset2 = datasets.FashionMNIST("./../data", train=False, transform=transform)
 
     #CIFAR10
-    # dataset1 = datasets.ImageNet(root="./../data", train=True, download=True, transform=transform)
-    # dataset2 = datasets.ImageNet(root="./../data", train=False, download=True, transform=transform)
+    # dataset1 = datasets.CIFAR10(root="./../data", train=True, download=True, transform=transform)
+    # dataset2 = datasets.CIFAR10(root="./../data", train=False, download=True, transform=transform)
     # train_loader = torch.utils.data.DataLoader(dataset1, **train_kwargs)
     # test_loader = torch.utils.data.DataLoader(dataset2, **test_kwargs)
 
