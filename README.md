@@ -26,6 +26,31 @@ Found in `models/attention/`, this model taps into CNN intermediate layers to ge
 
 ---
 
+## Results
+
+### Focus Model Used on MNIST
+![img](report/images/Picture3.png)
+Here we see the learned keypoints (red dots) on the MNIST dataset. The model learned to put the keypoints on the coves of the 3 and the middle line.
+
+### Corner Model Used on Fashion-MNIST
+![img](report/images/corner_on_FashionMNIST.png)
+Here the corner model is puts the keypoints on the corners of the clothing items like the shoulder and the end of the sleeves.
+
+### Attention Model Used on CIFAR-10
+![img](report/images/attentionheatmap.png)
+Here the heatmap shows the attention of the model on the CIFAR-10 dataset. The attention is most one the foreground objects.
+
+| Model           | MNIST | Fashion-MNIST | CIFAR-10 | Efficiency |
+| --------------- | ----- | ------------- | -------- | ---------- |
+| Focus (learned) | 98%   | 86%           | 52%      | Medium     |
+| Focus (corners) | 86%   | 72%           | 34%      | High       |
+| Attention-based |       |               | 79%      | Low        |
+
+* Focus models require much fewer parameters and improve explainability by labeling keypoints.
+* Attention models maintain accuracy while enhancing interpretability via attention maps.
+
+---
+
 ## Project Structure
 
 ```bash
@@ -48,19 +73,6 @@ Found in `models/attention/`, this model taps into CNN intermediate layers to ge
 │   ├── report.tex
 │   └── report.pdf
 ```
-
----
-
-## Results
-
-| Model           | MNIST | Fashion-MNIST | CIFAR-10 | Efficiency |
-| --------------- | ----- | ------------- | -------- | ---------- |
-| Focus (learned) | 98%   | 86%           | 52%      | Medium     |
-| Focus (corners) | 86%   | 72%           | 34%      | High       |
-| Attention-based |       |               | 79%      | Low        |
-
-* Focus models require much fewer parameters and improve explainability by labeling keypoints.
-* Attention models maintain accuracy while enhancing interpretability via attention maps.
 
 ---
 
