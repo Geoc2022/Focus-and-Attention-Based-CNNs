@@ -1,0 +1,64 @@
+@misc{zhao2020exploringselfattentionimagerecognition,
+title={Exploring Self-attention for Image Recognition},
+author={Hengshuang Zhao and Jiaya Jia and Vladlen Koltun},
+year={2020},
+eprint={2004.13621},
+archivePrefix={arXiv},
+primaryClass={[cs.CV](http://cs.CV)},
+url={[https://arxiv.org/abs/2004.13621](https://arxiv.org/abs/2004.13621)},
+
+abstract = "Recent work has shown that self-attention can serve as a basic building block for image recognition models. We explore variations of self-attention and assess their effectiveness for image recognition. We consider two forms of self-attention. One is pairwise self-attention, which generalizes standard dot-product attention and is fundamentally a set operator. The other is patchwise self-attention, which is strictly more powerful than convolution. Our pairwise self-attention networks match or outperform their convolutional counterparts, and the patchwise models substantially outperform the convolutional baselines. We also conduct experiments that probe the robustness of learned representations and conclude that self-attention networks may have significant benefits in terms of robustness and generalization."
+}
+
+@InProceedings{10.1007/978-3-030-20351-1_62,
+author="Yan, Yiqi
+and Kawahara, Jeremy
+and Hamarneh, Ghassan",
+editor="Chung, Albert C. S.
+and Gee, James C.
+and Yushkevich, Paul A.
+and Bao, Siqi",
+title="Melanoma Recognition via Visual Attention",
+booktitle="Information Processing in Medical Imaging",
+year="2019",
+publisher="Springer International Publishing",
+address="Cham",
+pages="793--804",
+abstract="We propose an attention-based method for melanoma recognition. The attention modules, which are learned together with other network parameters, estimate attention maps that highlight image regions of interest that are relevant to lesion classification. These attention maps provide a more interpretable output as opposed to only outputting a class label. Additionally, we propose to utilize prior information by regularizing attention maps with regions of interest (ROIs) (e.g., lesion segmentation or dermoscopic features). Whenever such prior information is available, both the classification performance and the attention maps can be further refined. To our knowledge, we are the first to introduce an end-to-end trainable attention module with regularization for melanoma recognition. We provide both quantitative and qualitative results on public datasets to demonstrate the effectiveness of our method. The code is available at [https://github.com/SaoYan/IPMI2019-AttnMel.](https://github.com/SaoYan/IPMI2019-AttnMel.)",
+isbn="978-3-030-20351-1"
+}  
+
+@misc{simonyan2015deepconvolutionalnetworkslargescale,
+title={Very Deep Convolutional Networks for Large-Scale Image Recognition},
+author={Karen Simonyan and Andrew Zisserman},
+year={2015},
+eprint={1409.1556},
+archivePrefix={arXiv},
+primaryClass={[cs.CV](http://cs.CV)},
+url={[https://arxiv.org/abs/1409.1556](https://arxiv.org/abs/1409.1556)},
+
+abstact= "In this work we investigate the effect of the convolutional network depth on its accuracy in the large-scale image recognition setting. Our main contribution is a thorough evaluation of networks of increasing depth using an architecture with very small (3x3) convolution filters, which shows that a significant improvement on the prior-art configurations can be achieved by pushing the depth to 16-19 weight layers. These findings were the basis of our ImageNet Challenge 2014 submission, where our team secured the first and the second places in the localisation and classification tracks respectively. We also show that our representations generalise well to other datasets, where they achieve state-of-the-art results. We have made our two best-performing ConvNet models publicly available to facilitate further research on the use of deep visual representations in computer vision."
+}
+
+@misc{jetley2018learnpayattention,
+title={Learn To Pay Attention},
+author={Saumya Jetley and Nicholas A. Lord and Namhoon Lee and Philip H. S. Torr},
+year={2018},
+eprint={1804.02391},
+archivePrefix={arXiv},
+primaryClass={[cs.CV](http://cs.CV)},
+url={[https://arxiv.org/abs/1804.02391](https://arxiv.org/abs/1804.02391)},
+
+abstact="We propose an end-to-end-trainable attention module for convolutional neural network (CNN) architectures built for image classification. The module takes as input the 2D feature vector maps which form the intermediate representations of the input image at different stages in the CNN pipeline, and outputs a 2D matrix of scores for each map. Standard CNN architectures are modified through the incorporation of this module, and trained under the constraint that a convex combination of the intermediate 2D feature vectors, as parameterised by the score matrices, must \textit{alone} be used for classification. Incentivised to amplify the relevant and suppress the irrelevant or misleading, the scores thus assume the role of attention values. Our experimental observations provide clear evidence to this effect: the learned attention maps neatly highlight the regions of interest while suppressing background clutter. Consequently, the proposed function is able to bootstrap standard CNN architectures for the task of image classification, demonstrating superior generalisation over 6 unseen benchmark datasets. When binarised, our attention maps outperform other CNN-based attention maps, traditional saliency maps, and top object proposals for weakly supervised segmentation as demonstrated on the Object Discovery dataset. We also demonstrate improved robustness against the fast gradient sign method of adversarial attack."
+}
+
+@misc{nourelahi2023explainableadversariallyrobustcnns,
+  title={How explainable are adversarially-robust CNNs?}, 
+  author={Mehdi Nourelahi and Lars Kotthoff and Peijie Chen and Anh Nguyen},
+  year={2023},
+  eprint={2205.13042},
+  archivePrefix={arXiv},
+  primaryClass={cs.CV},
+  url={https://arxiv.org/abs/2205.13042}, 
+  abstact="     Three important criteria of existing convolutional neural networks (CNNs) are (1) test-set accuracy; (2) out-of-distribution accuracy; and (3) explainability. While these criteria have been studied independently, their relationship is unknown. For example, do CNNs that have a stronger out-of-distribution performance have also stronger explainability? Furthermore, most prior feature-importance studies only evaluate methods on 2-3 common vanilla ImageNet-trained CNNs, leaving it unknown how these methods generalize to CNNs of other architectures and training algorithms. Here, we perform the first, large-scale evaluation of the relations of the three criteria using 9 feature-importance methods and 12 ImageNet-trained CNNs that are of 3 training algorithms and 5 CNN architectures. We find several important insights and recommendations for ML practitioners. First, adversarially robust CNNs have a higher explainability score on gradient-based attribution methods (but not CAM-based or perturbation-based methods). Second, AdvProp models, despite being highly accurate more than both vanilla and robust models alone, are not superior in explainability. Third, among 9 feature attribution methods tested, GradCAM and RISE are consistently the best methods. Fourth, Insertion and Deletion are biased towards vanilla and robust models respectively, due to their strong correlation with the confidence score distributions of a CNN. Fifth, we did not find a single CNN to be the best in all three criteria, which interestingly suggests that CNNs are harder to interpret as they become more accurate. "
+}

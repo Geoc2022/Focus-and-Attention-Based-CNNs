@@ -1,0 +1,24 @@
+\begin{thebibliography}{1}
+
+\bibitem{jetley2018learnpayattention}
+Saumya Jetley, Nicholas~A. Lord, Namhoon Lee, and Philip H.~S. Torr.
+\newblock Learn to pay attention, 2018.
+
+\bibitem{nourelahi2023explainableadversariallyrobustcnns}
+Mehdi Nourelahi, Lars Kotthoff, Peijie Chen, and Anh Nguyen.
+\newblock How explainable are adversarially-robust cnns?, 2023.
+
+\bibitem{simonyan2015deepconvolutionalnetworkslargescale}
+Karen Simonyan and Andrew Zisserman.
+\newblock Very deep convolutional networks for large-scale image recognition, 2015.
+
+\bibitem{10.1007/978-3-030-20351-1_62}
+Yiqi Yan, Jeremy Kawahara, and Ghassan Hamarneh.
+\newblock Melanoma recognition via visual attention.
+\newblock In Albert C.~S. Chung, James~C. Gee, Paul~A. Yushkevich, and Siqi Bao, editors, {\em Information Processing in Medical Imaging}, pages 793--804, Cham, 2019. Springer International Publishing.
+
+\bibitem{zhao2020exploringselfattentionimagerecognition}
+Hengshuang Zhao, Jiaya Jia, and Vladlen Koltun.
+\newblock Exploring self-attention for image recognition, 2020.
+
+\end{thebibliography}
